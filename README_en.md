@@ -1,277 +1,215 @@
 # ContentHub - Multi-Platform AI Content Distribution System
 
+<div align="center">
+
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/AlanGehrig/ContentHub)
-[![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.9+-green.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/fastapi-0.104+-orange.svg)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
-> Upload once, automatically adapt to all platforms, generate covers/copy/tags, one-click distribute + data monitoring
+**Upload once. Auto-adapt to all platforms. One-click publish with AI-generated captions, covers, and tags.**
 
-## 📖 Introduction
+</div>
 
-ContentHub is a multi-platform content distribution tool for content creators and marketing teams. Using AI technology, it enables one-time content creation with automatic platform adaptation, saving users significant time on repetitive editing and publishing.
+---
 
-### Core Value
+## 🎯 What is ContentHub?
 
-- ⚡ **Efficiency**: Upload once, automatically adapt to all platform sizes and formats
-- 🎨 **AI-Powered**: Smart cover generation, copy writing, titles, and tags
-- 📊 **Data Insights**: Unified monitoring of content performance across platforms
-- 🔄 **Batch Operations**: Support batch upload and distribution
-- 🛡️ **Reliable**: Redis queue support with automatic fallback
+ContentHub is an AI-powered multi-platform content distribution tool for content creators, photographers, and marketing teams.
 
-## 🌟 Features
+**The Problem:**
 
-### 1. Smart Image Processing
-- Auto-cropping to fit platform sizes
-- Smart cover generation (watermark, color enhancement)
-- Supported formats: JPEG, PNG, GIF, WebP
+| Traditional | ContentHub |
+|-------------|-----------|
+| Edit manually for each platform | Upload once, AI auto-adapts |
+| Crop images by hand | Smart center-crop with AI |
+| Publish one by one | One-click to all platforms |
+| No performance tracking | Unified analytics |
 
-### 2. AI Copy Generation
-- Platform-specific style adaptation
-- Smart title generation (viral title templates)
-- Auto-generated platform-specific tags
+---
 
-### 3. One-Click Distribution
-- Supported platforms: Xiaohongshu, Douyin, WeChat Official Account, Website
-- Batch publish to multiple platforms
-- Simulation mode (for when APIs are not connected)
+## ✨ Features
 
-### 4. Data Monitoring
-- Platform statistics (followers, likes, comments, views, etc.)
-- Task status tracking
+### 📸 Smart Image Processing
+
+- **Auto Cropping**: AI identifies the subject, keeps it centered
+- **Cover Generation**: Auto color correction + sharpening
+- **Batch Processing**: One image → all platform sizes
+- **Formats**: JPEG, PNG, GIF, WebP
+
+### ✍️ AI Caption Generation
+
+- **Platform-Native Style**: Auto-adapted tone per platform
+- **Viral Titles**: AI-generated high CTR titles
+- **Smart Tags**: Platform-specific trending hashtags
+- **Multi-language**: Chinese / English / Russian
+
+### 🚀 One-Click Publish
+
+| Platform | Dimensions | Style |
+|----------|-------------|-------|
+| Xiaohongshu | 1080×1440 (3:4) | Lifestyle/Tutorial |
+| Douyin | 1080×1920 (9:16) | Viral/Short-form |
+| WeChat | 900×500 (Banner) | Professional/Deep |
+| Website | 1920×1080 (16:9) | SEO-optimized |
+
+### 📊 Analytics
+
+- Real-time publish status
+- Cross-platform statistics
 - Publishing history
+
+---
 
 ## 🚀 Quick Start
 
 ### Requirements
 
-- Python 3.8+
-- Redis 5.0+ (optional, falls back to in-memory queue)
+- Python 3.9+
+- Redis 6+ (optional, falls back to in-memory queue)
 
 ### Installation
-
-#### 1. Clone the project
 
 ```bash
 git clone https://github.com/AlanGehrig/ContentHub.git
 cd ContentHub
-```
 
-#### 2. Create virtual environment (recommended)
-
-```bash
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# Linux/Mac
-source venv/bin/activate
-```
-
-#### 3. Install dependencies
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
+
+# Start server
+python -c "import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8001)"
 ```
 
-#### 4. Configure environment variables (optional)
+### Access
 
-Create a `.env` file:
+| Interface | URL |
+|-----------|-----|
+| **Frontend** | http://localhost:8001 |
+| **API Docs** | http://localhost:8001/docs |
+| **Health Check** | http://localhost:8001/api/v1/status |
 
-```env
-# AI API config (for AI copy generation, optional)
-AI_API_KEY=your_api_key_here
+---
 
-# Redis config (optional, falls back to in-memory queue)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
-```
-
-#### 5. Start the service
-
-**Windows:**
-```bash
-startup.bat
-```
-
-**Linux/Mac:**
-```bash
-chmod +x startup.sh
-./startup.sh
-```
-
-Or run directly:
-
-```bash
-python main.py
-```
-
-#### 6. Access API documentation
-
-Open browser: http://localhost:8000/docs
-
-## 📚 API Documentation
-
-### Basic Info
-
-- **Base URL**: `http://localhost:8000/api/v1`
-- **Docs**: http://localhost:8000/docs
-
-### Main Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | /upload | Upload material and create task |
-| POST | /upload/batch | Batch upload |
-| GET | /run | Execute distribution task |
-| GET | /status | System status |
-| GET | /stats | Data statistics |
-| GET | /tasks | Task list |
-| POST | /publish/simulate | Simulate publish |
-| GET | /platforms | Supported platforms |
-| POST | /image/process | Image processing |
-| GET | /ai/title | Generate title |
-| GET | /ai/tags | Generate tags |
-| POST | /ai/content | Generate platform-specific copy |
-
-## 🏗️ Architecture
+## 📐 Architecture
 
 ```
 ContentHub/
-├── main.py              # FastAPI main entry
-├── config.py            # Global configuration
+├── main.py                    # FastAPI entry point
+├── config.py                  # Global config
 ├── api/
-│   └── routes.py        # API routes
+│   └── routes.py              # 20+ API routes
 ├── services/
-│   ├── ai_adapter.py    # AI platform adapter
-│   ├── image_process.py  # Image processing
-│   ├── distribute.py     # Distribution service
-│   └── monitor.py        # Data monitoring
-├── queue/
-│   └── task_queue.py    # Task queue (Redis/in-memory)
-├── requirements.txt     # Dependencies
-├── startup.bat          # Windows startup script
-├── startup.sh          # Linux/Mac startup script
-├── README.md            # Chinese documentation
-└── README_en.md         # English documentation
+│   ├── ai_adapter.py          # AI caption adapter
+│   ├── image_process.py       # OpenCV image processing
+│   ├── distribute.py          # Distribution engine
+│   └── monitor.py             # Analytics
+├── task_queue_pkg/
+│   └── task_queue.py          # Task queue (Redis + memory fallback)
+├── frontend/
+│   └── index.html             # Web interface
+├── requirements.txt
+├── startup.bat                # Windows launcher
+└── startup.sh                 # Linux/Mac launcher
 ```
 
-### Tech Stack
+---
 
-| Layer | Technology |
-|-------|------------|
-| Backend | FastAPI + Uvicorn |
-| Image Processing | OpenCV + Pillow |
-| Task Queue | Redis (fallback: in-memory) |
-| Validation | Pydantic |
-| HTTP Client | Requests |
-| Config | python-dotenv |
+## 📖 API Reference
 
-### Platform Size Specs
+### Core Endpoints
 
-| Platform | Size | Ratio |
-|----------|------|-------|
-| Xiaohongshu | 1080×1440 | Portrait 3:4 |
-| Douyin | 1080×1920 | Portrait 9:16 |
-| WeChat | 900×500 | Landscape |
-| Website | 1920×1080 | Landscape 16:9 |
+#### Upload & Publish
+```bash
+POST /api/v1/distribute/publish
+Content-Type: multipart/form-data
+
+Params:
+- image_file: Image file
+- title: Title
+- content: Body text
+- platforms: xiaohongshu,douyin,wechat,website
+```
+
+#### System Status
+```bash
+GET /api/v1/status
+```
+
+#### Platform List
+```bash
+GET /api/v1/platforms
+```
+
+#### AI Generate
+```bash
+POST /api/v1/ai/generate
+{
+  "title": "Original title",
+  "content": "Body content",
+  "platform": "xiaohongshu"
+}
+```
+
+---
 
 ## 🔧 Configuration
 
-### Platform Sizes (config.py)
+### config.py
 
 ```python
 PLATFORM_SIZES = {
-    "xiaohongshu": (1080, 1440),  # Portrait 3:4
-    "douyin": (1080, 1920),        # Portrait 9:16
-    "wechat": (900, 500),          # Landscape
-    "website": (1920, 1080)        # Landscape 16:9
+    "xiaohongshu": (1080, 1440),
+    "douyin": (1080, 1920),
+    "wechat": (900, 500),
+    "website": (1920, 1080)
 }
-```
 
-### Redis Config
-
-```python
 REDIS_HOST = "localhost"
 REDIS_PORT = 6379
-REDIS_DB = 0
 ```
 
-When Redis is unavailable, the system automatically falls back to in-memory queue.
+### Environment (.env)
 
-### AI API Config
-
-```python
-AI_API_KEY = os.getenv("AI_API_KEY", "")
+```env
+AI_API_KEY=your_api_key_here
+REDIS_HOST=localhost
+REDIS_PORT=6379
 ```
 
-Without AI API Key, the system uses a mock copy generator.
-
-## 📝 Usage Examples
-
-### Python Example
-
-```python
-import requests
-
-# Upload material
-files = {'file': open('test.jpg', 'rb')}
-data = {
-    'title': 'My First Post',
-    'content': 'Sharing something great today...',
-    'platforms': 'xiaohongshu,douyin'
-}
-response = requests.post(
-    'http://localhost:8000/api/v1/upload',
-    files=files,
-    data=data
-)
-print(response.json())
-```
-
-### cURL Example
-
-```bash
-# Upload
-curl -X POST "http://localhost:8000/api/v1/upload" \
-  -F "file=@test.jpg" \
-  -F "title=Test Title" \
-  -F "content=Test Content" \
-  -F "platforms=xiaohongshu,douyin"
-
-# Run distribution
-curl -X GET "http://localhost:8000/api/v1/run"
-
-# Get status
-curl -X GET "http://localhost:8000/api/v1/status"
-```
+---
 
 ## ⚠️ Notes
 
-1. **File Size Limit**: Default max 50MB
-2. **Redis Optional**: Uses in-memory queue without Redis
-3. **Simulation Mode**: For when APIs are not connected
-4. **Production**: Recommend using Gunicorn + Uvicorn workers
+1. **Redis is optional**: Falls back to in-memory queue if unavailable
+2. **Simulated mode**: Uses mock publishing until real APIs are integrated
+3. **Port 8001**: Default port (8000 fallback if occupied)
 
-## 🔜 Roadmap
+---
 
-- [ ] Integrate real platform publishing APIs
-- [ ] Add scheduled publishing
-- [ ] Support video content processing
-- [ ] Add content moderation
-- [ ] Optimize AI copy generation
-- [ ] Add data visualization dashboard
+## 🔮 Roadmap
+
+- [ ] Real Xiaohongshu/Douyin API integration
+- [ ] Video frame extraction
+- [ ] Scheduled publishing
+- [ ] Content moderation
+- [ ] Analytics dashboard
+- [ ] Chrome extension
+
+---
 
 ## 📄 License
 
 MIT License
 
+---
+
 ## 👤 Author
 
-**Alan Gehrig**
-- GitHub: [@AlanGehrig](https://github.com/AlanGehrig)
+**Alan Gehrig**  
+GitHub: [@AlanGehrig](https://github.com/AlanGehrig)  
+Photography Portfolio: [LightPlanner AI](https://github.com/AlanGehrig/lightplanner-ai)
 
 ---
 
-*If this project is helpful, please give a ⭐*
+*If this project helps you, please give it a ⭐*
