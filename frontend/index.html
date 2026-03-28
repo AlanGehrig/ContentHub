@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContentHub - 自媒体AI自动分发系统</title>
+    <style>
+        /* ==================== 全局样式 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #161b27;
+            --bg-card: #1c2230;
+            --bg-card-hover: #222838;
+            --bg-input: #12161f;
+            --border: #2a3042;
+            --border-active: #4a7dff;
+            --text-primary: #e8eaf0;
+            --text-secondary: #8b90a0;
+            --text-muted: #5a6070;
+            --accent: #4a7dff;
+            --accent-hover: #5f8fff;
+            --accent-glow: rgba(74, 125, 255, 0.25);
+            --success: #34d399;
+            --error: #f87171;
+            --warning: #fbbf24;
+            --platform-xhs: #fe2c55;
+            --platform-dy: #00f2ea;
+            --platform-wx: #07c160;
+            --platform-web: #4a7dff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ==================== 头部 ==================== */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .brand h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .brand span {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .status-badge:hover {
+            border-color: var(--border-active);
+            background: var(--bg-card-hover);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 6px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: var(--error);
+            box-shadow: 0 0 6px var(--error);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ==================== 主内容 ==================== */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+
+        /* ==================== 左侧发布区 ==================== */
+        .publish-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: border-color 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(74, 125, 255, 0.3);
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ==================== 图片上传区 ==================== */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: var(--accent);
+            background: rgba(74, 125, 255, 0.05);
+        }
+
+        .upload-area.has-image {
+            border-style: solid;
+            border-color: var(--border);
+            padding: 8px;
+        }
+
+        .upload-icon {
+            font-size: 36px;
+            color: var(--text-muted);
+        }
+
+        .upload-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .upload-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .upload-area:hover .remove-image {
+            opacity: 1;
+        }
+
+        /* ==================== 表单输入 ==================== */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+        }
+
+        .form-input {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+            font-family: inherit;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.7;
+        }
+
+        /* ==================== 平台选择 ==================== */
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .platform-card {
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .platform-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .platform-card.xiaohongshu::before { background: var(--platform-xhs); }
+        .platform-card.douyin::before { background: var(--platform-dy); }
+        .platform-card.wechat::before { background: var(--platform-wx); }
+        .platform-card.website::before { background: var(--platform-web); }
+
+        .platform-card:hover {
+            border-color: rgba(74, 125, 255, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .platform-card.selected {
+            border-color: var(--accent);
+            background: rgba(74, 125, 255, 0.08);
+        }
+
+        .platform-card.selected::before {
+            opacity: 1;
+        }
+
+        .platform-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .platform-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .platform-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: transparent;
+            transition: all 0.2s;
+        }
+
+        .platform-card.selected .platform-check {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: white;
+        }
+
+        .platform-size {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .platform-ratio {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+
+        /* ==================== 发布按钮 ==================== */
+        .publish-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent), #6366f1);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .publish-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(74, 125, 255, 0.35);
+        }
+
+        .publish-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .publish-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .publish-btn .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ==================== 结果展示 ==================== */
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            display: none;
+        }
+
+        .result-card.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .result-title {
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .result-close:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .result-platforms {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .result-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .result-icon.xiaohongshu { background: rgba(254, 44, 85, 0.15); }
+        .result-icon.douyin { background: rgba(0, 242, 234, 0.15); }
+        .result-icon.wechat { background: rgba(7, 193, 96, 0.15); }
+        .result-icon.website { background: rgba(74, 125, 255, 0.15); }
+
+        .result-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .result-platform {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .result-message {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-status {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            flex-shrink: 0;
+        }
+
+        .result-status.success {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--success);
+        }
+
+        .result-status.failed {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--error);
+        }
+
+        /* ==================== 右侧状态栏 ==================== */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .stats-card .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-item {
+            background: var(--bg-input);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ==================== 平台数据卡片 ==================== */
+        .data-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .data-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-input);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .data-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .data-icon.xiaohongshu { background: rgba(254, 44, 85, 0.15); }
+        .data-icon.douyin { background: rgba(0, 242, 234, 0.15); }
+        .data-icon.wechat { background: rgba(7, 193, 96, 0.15); }
+        .data-icon.website { background: rgba(74, 125, 255, 0.15); }
+
+        .data-info {
+            flex: 1;
+        }
+
+        .data-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .data-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .data-stat {
+            text-align: right;
+        }
+
+        .data-stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .data-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* ==================== 队列状态 ==================== */
+        .queue-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .queue-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--warning);
+            flex-shrink: 0;
+        }
+
+        .queue-text {
+            flex: 1;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .queue-time {
+            color: var(--text-muted);
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        /* ==================== 提示消息 ==================== */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 13px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+            max-width: 340px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--error); }
+
+        /* ==================== 响应式 ==================== */
+        @media (max-width: 900px) {
+            .main {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== 头部 ==================== -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">🚀</div>
+            <div class="brand">
+                <h1>ContentHub</h1>
+                <span>自媒体AI自动分发系统</span>
+            </div>
+        </div>
+        <div class="status-badge" id="statusBadge" title="点击刷新状态">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">连接中...</span>
+        </div>
+    </header>
+
+    <!-- ==================== 主内容 ==================== -->
+    <main class="main">
+        <!-- 左侧：发布区 -->
+        <div class="publish-section">
+            <!-- 图片上传 -->
+            <div class="card">
+                <div class="card-title">📷 素材图片</div>
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-placeholder">
+                        <div class="upload-icon">🖼️</div>
+                        <div class="upload-text">点击上传图片素材</div>
+                        <div class="upload-hint">支持 JPG、PNG、GIF、WebP，最大 50MB</div>
+                    </div>
+                    <div class="upload-preview" style="display:none;">
+                        <img class="preview-image" id="previewImage" src="" alt="预览">
+                        <button class="remove-image" onclick="removeImage(event)">✕</button>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleFileSelect(event)">
+            </div>
+
+            <!-- 内容编辑 -->
+            <div class="card">
+                <div class="card-title">✍️ 内容编辑</div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>标题</label>
+                    <input type="text" class="form-input" id="titleInput" placeholder="输入内容标题，将自动适配各平台风格">
+                </div>
+                <div class="form-group">
+                    <label>正文内容</label>
+                    <textarea class="form-input" id="contentInput" placeholder="输入内容正文，AI将自动生成各平台专属文案..."></textarea>
+                </div>
+            </div>
+
+            <!-- 平台选择 -->
+            <div class="card">
+                <div class="card-title">🌐 分发平台</div>
+                <div class="platform-grid">
+                    <div class="platform-card xiaohongshu" data-platform="xiaohongshu" onclick="togglePlatform(this)">
+                        <div class="platform-header">
+                            <span class="platform-name">小红书</span>
+                            <div class="platform-check">✓</div>
+                        </div>
+                        <div class="platform-size">1080 × 1440 px</div>
+                        <div class="platform-ratio">3:4 竖版 · 种草风格</div>
+                    </div>
+                    <div class="platform-card douyin" data-platform="douyin" onclick="togglePlatform(this)">
+                        <div class="platform-header">
+                            <span class="platform-name">抖音</span>
+                            <div class="platform-check">✓</div>
+                        </div>
+                        <div class="platform-size">1080 × 1920 px</div>
+                        <div class="platform-ratio">9:16 竖版 · 活力节奏</div>
+                    </div>
+                    <div class="platform-card wechat" data-platform="wechat" onclick="togglePlatform(this)">
+                        <div class="platform-header">
+                            <span class="platform-name">微信公众号</span>
+                            <div class="platform-check">✓</div>
+                        </div>
+                        <div class="platform-size">900 × 500 px</div>
+                        <div class="platform-ratio">横版 · 专业深度</div>
+                    </div>
+                    <div class="platform-card website" data-platform="website" onclick="togglePlatform(this)">
+                        <div class="platform-header">
+                            <span class="platform-name">独立站</span>
+                            <div class="platform-check">✓</div>
+                        </div>
+                        <div class="platform-size">1920 × 1080 px</div>
+                        <div class="platform-ratio">16:9 横版 · SEO优化</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 发布按钮 -->
+            <button class="publish-btn" id="publishBtn" onclick="handlePublish()">
+                🚀 一键分发
+            </button>
+
+            <!-- 结果展示 -->
+            <div class="result-card" id="resultCard">
+                <div class="result-header">
+                    <div class="result-title">
+                        <span>📡</span>
+                        <span>分发结果</span>
+                    </div>
+                    <button class="result-close" onclick="closeResult()">✕</button>
+                </div>
+                <div class="result-platforms" id="resultPlatforms"></div>
+            </div>
+        </div>
+
+        <!-- 右侧：状态栏 -->
+        <div class="sidebar">
+            <!-- 系统状态 -->
+            <div class="card stats-card">
+                <div class="card-title">📊 系统状态</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statQueue">--</div>
+                        <div class="stat-label">队列任务</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statTotal">--</div>
+                        <div class="stat-label">总任务数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statSuccess">--</div>
+                        <div class="stat-label">成功发布</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statFailed">--</div>
+                        <div class="stat-label">失败</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 平台数据 -->
+            <div class="card">
+                <div class="card-title">📈 平台数据</div>
+                <div class="data-list" id="dataList">
+                    <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">加载中...</div>
+                </div>
+            </div>
+
+            <!-- 待分发队列 -->
+            <div class="card">
+                <div class="card-title">⏳ 待分发队列</div>
+                <div id="queueList" style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        /* ==================== 状态变量 ==================== */
+        const API_BASE = '/api/v1';
+        let selectedFile = null;
+        let selectedPlatforms = ['xiaohongshu', 'douyin', 'wechat', 'website'];
+        let isPublishing = false;
+
+        /* ==================== 初始化 ==================== */
+        document.addEventListener('DOMContentLoaded', () => {
+            // 默认全选平台
+            document.querySelectorAll('.platform-card').forEach(card => {
+                card.classList.add('selected');
+            });
+            // 加载状态
+            loadStatus();
+            // 定时刷新
+            setInterval(loadStatus, 30000);
+        });
+
+        /* ==================== 平台选择 ==================== */
+        function togglePlatform(el) {
+            const platform = el.dataset.platform;
+            el.classList.toggle('selected');
+            if (el.classList.contains('selected')) {
+                if (!selectedPlatforms.includes(platform)) {
+                    selectedPlatforms.push(platform);
+                }
+            } else {
+                selectedPlatforms = selectedPlatforms.filter(p => p !== platform);
+            }
+        }
+
+        /* ==================== 文件上传 ==================== */
+        const uploadArea = document.getElementById('uploadArea');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) handleFile(file);
+        }
+
+        function handleFile(file) {
+            if (!file.type.match(/^image\/(jpeg|png|gif|webp)$/)) {
+                showToast('请上传 JPG、PNG、GIF 或 WebP 格式的图片', 'error');
+                return;
+            }
+            if (file.size > 50 * 1024 * 1024) {
+                showToast('图片大小不能超过 50MB', 'error');
+                return;
+            }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadArea.classList.add('has-image');
+                uploadArea.querySelector('.upload-placeholder').style.display = 'none';
+                const preview = uploadArea.querySelector('.upload-preview');
+                preview.style.display = 'block';
+                document.getElementById('previewImage').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage(event) {
+            event.stopPropagation();
+            selectedFile = null;
+            uploadArea.classList.remove('has-image');
+            uploadArea.querySelector('.upload-placeholder').style.display = 'flex';
+            uploadArea.querySelector('.upload-preview').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+        }
+
+        /* ==================== 发布 ==================== */
+        async function handlePublish() {
+            if (isPublishing) return;
+
+            const title = document.getElementById('titleInput').value.trim();
+            const content = document.getElementById('contentInput').value.trim();
+
+            if (!title) {
+                showToast('请输入内容标题', 'error');
+                return;
+            }
+
+            if (selectedPlatforms.length === 0) {
+                showToast('请至少选择一个目标平台', 'error');
+                return;
+            }
+
+            isPublishing = true;
+            const btn = document.getElementById('publishBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>分发中，请稍候...';
+
+            try {
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('content', content);
+                formData.append('platforms', selectedPlatforms.join(','));
+                if (selectedFile) {
+                    formData.append('image_file', selectedFile);
+                }
+
+                const response = await fetch(`${API_BASE}/distribute/publish`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.detail || '分发请求失败');
+                }
+
+                showResult(result.data);
+                showToast(`分发完成！成功 ${result.data.publish_result.success} 个平台`, 'success');
+
+                // 清空表单
+                document.getElementById('titleInput').value = '';
+                document.getElementById('contentInput').value = '';
+                removeImage({ stopPropagation: () => {} });
+
+                // 刷新状态
+                loadStatus();
+
+            } catch (err) {
+                console.error('发布失败:', err);
+                showToast('分发失败: ' + err.message, 'error');
+            } finally {
+                isPublishing = false;
+                btn.disabled = false;
+                btn.innerHTML = '🚀 一键分发';
+            }
+        }
+
+        /* ==================== 结果展示 ==================== */
+        function showResult(data) {
+            const card = document.getElementById('resultCard');
+            const container = document.getElementById('resultPlatforms');
+            const results = data.publish_result.results;
+
+            container.innerHTML = '';
+
+            const platformNames = {
+                xiaohongshu: '小红书',
+                douyin: '抖音',
+                wechat: '微信公众号',
+                website: '独立站'
+            };
+
+            const platformEmoji = {
+                xiaohongshu: '📕',
+                douyin: '🎵',
+                wechat: '💚',
+                website: '🌐'
+            };
+
+            for (const [platform, result] of Object.entries(results)) {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.innerHTML = `
+                    <div class="result-icon ${platform}">${platformEmoji[platform] || '📦'}</div>
+                    <div class="result-info">
+                        <div class="result-platform">${platformNames[platform] || platform}</div>
+                        <div class="result-message">${result.message || result.url || ''}</div>
+                    </div>
+                    <div class="result-status ${result.status === 'success' || result.status === 'simulated' ? 'success' : 'failed'}">
+                        ${result.status === 'success' || result.status === 'simulated' ? '成功' : '失败'}
+                    </div>
+                `;
+                container.appendChild(item);
+            }
+
+            card.classList.add('show');
+        }
+
+        function closeResult() {
+            document.getElementById('resultCard').classList.remove('show');
+        }
+
+        /* ==================== 状态加载 ==================== */
+        async function loadStatus() {
+            try {
+                const [statusRes, statsRes] = await Promise.all([
+                    fetch(`${API_BASE}/status`),
+                    fetch(`${API_BASE}/stats`)
+                ]);
+
+                const statusData = await statusRes.json();
+                const statsData = await statsRes.json();
+
+                // 更新头部状态
+                document.getElementById('statusDot').classList.remove('offline');
+                document.getElementById('statusText').textContent = '系统正常';
+
+                // 更新统计
+                const summary = statsData.data?.summary || {};
+                document.getElementById('statQueue').textContent = statusData.data?.queue_length ?? '--';
+                document.getElementById('statTotal').textContent = summary.total_tasks || statusData.data?.task_summary?.total_tasks || '--';
+                document.getElementById('statSuccess').textContent = summary.total_likes ? formatNum(summary.total_likes) : '--';
+                document.getElementById('statFailed').textContent = '--';
+
+                // 更新平台数据
+                renderPlatformData(statsData.data?.platforms || {});
+
+                // 更新队列
+                renderQueue(statusData.data?.pending_tasks || []);
+
+            } catch (err) {
+                console.error('状态加载失败:', err);
+                document.getElementById('statusDot').classList.add('offline');
+                document.getElementById('statusText').textContent = '连接异常';
+            }
+        }
+
+        function renderPlatformData(platforms) {
+            const container = document.getElementById('dataList');
+            const platformNames = {
+                xiaohongshu: '小红书',
+                douyin: '抖音',
+                wechat: '公众号',
+                website: '独立站'
+            };
+            const emoji = {
+                xiaohongshu: '📕',
+                douyin: '🎵',
+                wechat: '💚',
+                website: '🌐'
+            };
+
+            const keys = ['xiaohongshu', 'douyin', 'wechat', 'website'];
+            const html = keys.map(k => {
+                const p = platforms[k] || {};
+                return `
+                    <div class="data-item">
+                        <div class="data-icon ${k}">${emoji[k]}</div>
+                        <div class="data-info">
+                            <div class="data-name">${platformNames[k]}</div>
+                            <div class="data-meta">粉丝 ${formatNum(p.followers || p.subscribers || p.visitors || 0)}</div>
+                        </div>
+                        <div class="data-stat">
+                            <div class="data-stat-value">${formatNum(p.views || p.read_count || p.page_views || 0)}</div>
+                            <div class="data-stat-label">浏览</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function renderQueue(tasks) {
+            const container = document.getElementById('queueList');
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">队列为空</div>';
+                return;
+            }
+            container.innerHTML = tasks.map(t => `
+                <div class="queue-item">
+                    <div class="queue-dot"></div>
+                    <div class="queue-text">${t.title || t.task_id || '未知任务'}</div>
+                    <div class="queue-time">${t.status || ''}</div>
+                </div>
+            `).join('');
+        }
+
+        /* ==================== 工具函数 ==================== */
+        function formatNum(n) {
+            if (n >= 10000) return (n / 10000).toFixed(1) + 'w';
+            if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+            return String(n || 0);
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        /* ==================== 状态刷新点击 ==================== */
+        document.getElementById('statusBadge').addEventListener('click', loadStatus);
+    </script>
+</body>
+</html>

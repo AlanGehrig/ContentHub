@@ -1,5 +1,5 @@
 @echo off
-echo ContentHub 启动中...
+echo ContentHub 启动中（端口 8001）...
 echo ============================
 cd /d "%~dp0"
 
@@ -11,26 +11,16 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM 安装依赖
+REM 安装依赖（如果需要）
 echo.
-echo [1/2] 正在安装依赖...
-pip install -r requirements.txt
-
-if %errorlevel% neq 0 (
-    echo [错误] 依赖安装失败
-    pause
-    exit /b 1
-)
-
-REM 启动服务
-echo.
-echo [2/2] 正在启动 ContentHub...
+echo 正在启动 ContentHub...
 echo ============================
 echo.
-echo 访问 http://localhost:8000/docs 查看API文档
+echo 访问 http://localhost:8001 查看前端页面
+echo 访问 http://localhost:8001/docs 查看API文档
 echo 按 Ctrl+C 停止服务
 echo.
 
-python main.py
+python -c "import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8001, log_level='info')"
 
 pause

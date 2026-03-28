@@ -16,7 +16,7 @@ from services.image_process import image_service
 from services.ai_adapter import ai_service
 from services.distribute import distribute_service
 from services.monitor import monitor_service
-from queue.task_queue import task_queue
+from task_queue_pkg.task_queue import task_queue
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +49,139 @@ class PlatformPublishRequest(BaseModel):
     tags: Optional[List[str]] = None
 
 
+class DistributePublishRequest(BaseModel):
+    """一键分发请求"""
+    title: str
+    content: str
+    platforms: List[str]
+    tags: Optional[List[str]] = None
+
+
 class StatsResponse(BaseModel):
     """统计响应"""
     platform: str
     data: dict
 
 
+# ============== 辅助函数 ==============
+
+def json_response(data: dict, message: str = "", code: int = 200) -> JSONResponse:
+    """
+    统一返回 JSON 响应（确保中文正常显示）
+
+    Args:
+        data: 响应数据
+        message: 响应消息
+        code: 状态码
+
+    Returns:
+        JSONResponse
+    """
+    return JSONResponse(
+        content={
+            "code": code,
+            "message": message,
+            "data": data
+        },
+        ensure_ascii=False
+    )
+
+
 # ============== 路由定义 ==============
+
+@router.post("/distribute/publish")
+async def distribute_publish(
+    title: str = Form(...),
+    content: str = Form(""),
+    platforms: str = Form(""),  # 逗号分隔的平台列表
+    image_file: Optional[UploadFile] = File(None)
+):
+    """
+    一键分发接口 - 核心入口
+    接受标题、内容、目标平台列表、图片文件，一次完成上传+分发
+
+    Args:
+        title: 内容标题
+        content: 内容正文
+        platforms: 目标平台（逗号分隔，支持多选）
+        image_file: 上传的图片文件（可选）
+
+    Returns:
+        JSON: 分发结果
+    """
+    try:
+        # 1. 解析平台列表
+        platform_list = [p.strip() for p in platforms.split(",") if p.strip()]
+        if not platform_list:
+            platform_list = config.SUPPORT_PLATFORMS
+
+        # 验证平台
+        for p in platform_list:
+            if p not in config.SUPPORT_PLATFORMS:
+                raise HTTPException(status_code=400, detail=f"不支持的平台: {p}")
+
+        file_path = None
+
+        # 2. 处理图片上传（如果提供了图片）
+        if image_file and image_file.filename:
+            allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+            if image_file.content_type not in allowed_types:
+                raise HTTPException(status_code=400, detail=f"不支持的文件类型: {image_file.content_type}")
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{timestamp}_{image_file.filename}"
+            file_path = os.path.join(config.UPLOAD_DIR, filename)
+
+            with open(file_path, "wb") as f:
+                content_bytes = await image_file.read()
+                if len(content_bytes) > config.MAX_UPLOAD_SIZE:
+                    raise HTTPException(status_code=400, detail="文件大小超过50MB限制")
+                f.write(content_bytes)
+
+            logger.info(f"图片已保存: {file_path}")
+
+        # 3. 构建分发数据
+        task_data = {
+            "title": title,
+            "content": content,
+            "image_path": file_path,
+            "platforms": platform_list,
+            "tags": []
+        }
+
+        # 4. 添加到任务队列
+        task_id = task_queue.add_task(task_data)
+
+        # 5. 更新任务状态
+        monitor_service.update_task(task_id, "pending", {
+            "title": title,
+            "platforms": platform_list,
+            "image_path": file_path
+        })
+
+        # 6. 执行批量发布
+        logger.info(f"开始分发任务 {task_id} -> {platform_list}")
+        result = distribute_service.batch_publish(task_data)
+
+        # 7. 更新任务状态为完成
+        monitor_service.update_task(task_id, "completed", {"result": result})
+
+        logger.info(f"分发任务完成: {task_id}, 成功 {result['success']} 个平台")
+
+        return json_response({
+            "task_id": task_id,
+            "title": title,
+            "platforms": platform_list,
+            "image_path": file_path,
+            "publish_result": result
+        }, message="分发完成")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"分发失败: {e}")
+        raise HTTPException(status_code=500, detail=f"分发失败: {str(e)}")
+
 
 @router.post("/upload")
 async def upload_file(
@@ -116,15 +242,11 @@ async def upload_file(
 
         logger.info(f"任务创建成功: {task_id}")
 
-        return JSONResponse({
-            "code": 200,
-            "message": "上传成功，任务已创建",
-            "data": {
-                "task_id": task_id,
-                "file_path": file_path,
-                "platforms": platform_list
-            }
-        })
+        return json_response({
+            "task_id": task_id,
+            "file_path": file_path,
+            "platforms": platform_list
+        }, message="上传成功，任务已创建")
 
     except HTTPException:
         raise
@@ -209,16 +331,12 @@ async def upload_batch(
                     "message": str(e)
                 })
 
-        return JSONResponse({
-            "code": 200,
-            "message": f"批量上传完成，成功 {sum(1 for r in results if r['status']=='success')} 个",
-            "data": {
-                "total": len(files),
-                "success": sum(1 for r in results if r['status'] == 'success'),
-                "failed": sum(1 for r in results if r['status'] == 'failed'),
-                "results": results
-            }
-        })
+        return json_response({
+            "total": len(files),
+            "success": sum(1 for r in results if r['status'] == 'success'),
+            "failed": sum(1 for r in results if r['status'] == 'failed'),
+            "results": results
+        }, message=f"批量上传完成，成功 {sum(1 for r in results if r['status']=='success')} 个")
 
     except Exception as e:
         logger.error(f"批量上传失败: {e}")
@@ -238,11 +356,7 @@ async def run_distribution():
         task = task_queue.get_task()
 
         if not task:
-            return JSONResponse({
-                "code": 404,
-                "message": "队列中没有待执行的任务",
-                "data": None
-            })
+            return json_response(None, message="队列中没有待执行的任务", code=404)
 
         task_id = task.get("task_id", "unknown")
         monitor_service.update_task(task_id, "publishing")
@@ -255,14 +369,10 @@ async def run_distribution():
             "result": result
         })
 
-        return JSONResponse({
-            "code": 200,
-            "message": "分发执行完成",
-            "data": {
-                "task_id": task_id,
-                "result": result
-            }
-        })
+        return json_response({
+            "task_id": task_id,
+            "result": result
+        }, message="分发执行完成")
 
     except Exception as e:
         logger.error(f"分发执行失败: {e}")
@@ -284,18 +394,14 @@ async def get_status():
         # 获取队列中的任务预览
         pending_tasks = task_queue.peek_tasks(5)
 
-        return JSONResponse({
-            "code": 200,
-            "message": "系统运行正常",
-            "data": {
-                "status": "running",
-                "queue_length": queue_length,
-                "redis_mode": task_queue.redis_available,
-                "task_summary": task_summary,
-                "pending_tasks": pending_tasks,
-                "timestamp": datetime.now().isoformat()
-            }
-        })
+        return json_response({
+            "status": "running",
+            "queue_length": queue_length,
+            "redis_mode": task_queue.redis_available,
+            "task_summary": task_summary,
+            "pending_tasks": pending_tasks,
+            "timestamp": datetime.now().isoformat()
+        }, message="系统运行正常")
 
     except Exception as e:
         logger.error(f"获取状态失败: {e}")
@@ -315,11 +421,7 @@ async def get_stats(platform: str = Query("all", description="平台名称: xiao
     """
     try:
         stats = monitor_service.get_stats(platform)
-        return JSONResponse({
-            "code": 200,
-            "message": "获取成功",
-            "data": stats
-        })
+        return json_response(stats, message="获取成功")
 
     except Exception as e:
         logger.error(f"获取统计失败: {e}")
@@ -353,14 +455,10 @@ async def get_tasks(limit: int = Query(20, ge=1, le=100)):
     """
     try:
         tasks = monitor_service.get_recent_tasks(limit)
-        return JSONResponse({
-            "code": 200,
-            "message": "获取成功",
-            "data": {
-                "total": len(tasks),
-                "tasks": tasks
-            }
-        })
+        return json_response({
+            "total": len(tasks),
+            "tasks": tasks
+        }, message="获取成功")
 
     except Exception as e:
         logger.error(f"获取任务列表失败: {e}")
@@ -384,11 +482,7 @@ async def get_task_detail(task_id: str):
         if not task:
             raise HTTPException(status_code=404, detail=f"任务不存在: {task_id}")
 
-        return JSONResponse({
-            "code": 200,
-            "message": "获取成功",
-            "data": task
-        })
+        return json_response(task, message="获取成功")
 
     except HTTPException:
         raise
@@ -410,14 +504,10 @@ async def get_publish_history(limit: int = Query(50, ge=1, le=200)):
     """
     try:
         history = distribute_service.get_publish_history(limit)
-        return JSONResponse({
-            "code": 200,
-            "message": "获取成功",
-            "data": {
-                "total": len(history),
-                "history": history
-            }
-        })
+        return json_response({
+            "total": len(history),
+            "history": history
+        }, message="获取成功")
 
     except Exception as e:
         logger.error(f"获取发布历史失败: {e}")
@@ -443,11 +533,7 @@ async def simulate_publish(request: PlatformPublishRequest):
             "tags": request.tags
         })
 
-        return JSONResponse({
-            "code": 200,
-            "message": "模拟发布完成",
-            "data": result
-        })
+        return json_response(result, message="模拟发布完成")
 
     except Exception as e:
         logger.error(f"模拟发布失败: {e}")
@@ -472,14 +558,10 @@ async def get_platforms():
             "size": config.PLATFORM_SIZES.get(p)
         })
 
-    return JSONResponse({
-        "code": 200,
-        "message": "获取成功",
-        "data": {
-            "platforms": platforms_info,
-            "default": config.SUPPORT_PLATFORMS
-        }
-    })
+    return json_response({
+        "platforms": platforms_info,
+        "default": config.SUPPORT_PLATFORMS
+    }, message="获取成功")
 
 
 @router.post("/image/process")
@@ -523,16 +605,12 @@ async def process_image(
         if not result_path:
             raise HTTPException(status_code=500, detail="图像处理失败")
 
-        return JSONResponse({
-            "code": 200,
-            "message": "处理成功",
-            "data": {
-                "original_path": file_path,
-                "processed_path": result_path,
-                "platform": platform,
-                "mode": mode
-            }
-        })
+        return json_response({
+            "original_path": file_path,
+            "processed_path": result_path,
+            "platform": platform,
+            "mode": mode
+        }, message="处理成功")
 
     except HTTPException:
         raise
@@ -558,15 +636,11 @@ async def generate_title(
     """
     try:
         title = ai_service.generate_title(original, platform)
-        return JSONResponse({
-            "code": 200,
-            "message": "生成成功",
-            "data": {
-                "original": original,
-                "generated": title,
-                "platform": platform
-            }
-        })
+        return json_response({
+            "original": original,
+            "generated": title,
+            "platform": platform
+        }, message="生成成功")
 
     except Exception as e:
         logger.error(f"标题生成失败: {e}")
@@ -590,14 +664,10 @@ async def generate_tags(
     """
     try:
         tags = ai_service.generate_tags(platform, count)
-        return JSONResponse({
-            "code": 200,
-            "message": "生成成功",
-            "data": {
-                "platform": platform,
-                "tags": tags
-            }
-        })
+        return json_response({
+            "platform": platform,
+            "tags": tags
+        }, message="生成成功")
 
     except Exception as e:
         logger.error(f"标签生成失败: {e}")
@@ -625,15 +695,11 @@ async def generate_content(request: TaskCreateRequest):
             )
             results[platform] = content
 
-        return JSONResponse({
-            "code": 200,
-            "message": "生成成功",
-            "data": {
-                "title": request.title,
-                "platforms": request.platforms,
-                "contents": results
-            }
-        })
+        return json_response({
+            "title": request.title,
+            "platforms": request.platforms,
+            "contents": results
+        }, message="生成成功")
 
     except Exception as e:
         logger.error(f"文案生成失败: {e}")
