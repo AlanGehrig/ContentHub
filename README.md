@@ -1,4 +1,4 @@
-# ContentHub - 自媒体多平台AI自动分发系统
+# ContentHub - 自媒体本地图像处理工具
 
 <div align="center">
 
@@ -7,24 +7,40 @@
 [![FastAPI](https://img.shields.io/badge/fastapi-0.104+-orange.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
-**一次上传素材，AI自动适配全平台格式、生成封面/文案/标签，一键分发+数据监控**
+**本地图像批量处理工具 - 智能裁剪、封面生成、AI文案辅助**
 
 </div>
 
 ---
 
-## 🎯 项目简介
+## 🎯 是什么
 
-ContentHub 是一款面向自媒体创作者、摄影师和营销团队的多平台内容分发工具。
+ContentHub 是一款本地图像处理工具，帮助你：
 
-**解决什么问题？**
+| 功能 | 说明 |
+|------|------|
+| 📐 **智能裁剪** | 一次上传，自动裁剪到各平台最优尺寸 |
+| 🎨 **封面生成** | 自动调色+锐化，生成高质量封面 |
+| ✍️ **AI 文案辅助** | 生成平台适配的标题和标签（模拟模式） |
+| 📊 **任务队列** | Redis 或内存队列，支持批量处理 |
 
-| 传统方式 | ContentHub |
-|---------|-----------|
-| 每个平台单独编辑 | 一次上传，AI自动适配 |
-| 手动裁剪尺寸 | 自动裁剪到各平台最优比例 |
-| 逐个平台发布 | 一键分发到所有平台 |
-| 无法追踪效果 | 统一数据监控 |
+---
+
+## ⚠️ 重要说明
+
+**本工具是本地图像处理工具，不是发布平台。**
+
+| 能做到 | 不能做到 |
+|--------|---------|
+| ✅ 本地图像裁剪 | ❌ 发布到小红书/抖音/公众号 |
+| ✅ 封面生成 | ❌ 真实账号授权 |
+| ✅ 文案生成（模拟） | ❌ 平台官方 API |
+| ✅ 批量处理 | ❌ 真实发布 |
+
+**为什么？**
+- 小红书、抖音、微信公众号 **没有公开的内容发布 API**
+- 真实发布需要平台官方 OAuth 认证，个人开发者几乎无法申请
+- 本工具专注于 **本地处理**，把重复工作自动化
 
 ---
 
@@ -32,32 +48,23 @@ ContentHub 是一款面向自媒体创作者、摄影师和营销团队的多平
 
 ### 📸 智能图像处理
 
-- **自动裁剪**：AI智能识别主体，确保最重要的内容在画面中心
-- **封面生成**：自动调色+锐化，生成各平台最优封面
-- **批量处理**：一次处理多个平台尺寸
-- **格式支持**：JPEG、PNG、GIF、WebP
+| 平台 | 尺寸 | 比例 |
+|------|------|------|
+| 小红书 | 1080×1440 | 竖版 3:4 |
+| 抖音 | 1080×1920 | 竖版 9:16 |
+| 微信公众号 | 900×500 | 横版 |
+| 独立站 | 1920×1080 | 横版 16:9 |
 
-### ✍️ AI文案生成
+### 🎨 封面生成
 
-- **平台专属风格**：根据平台调性自动改编文案语气
-- **爆款标题**：AI生成高点击率标题
-- **智能标签**：自动生成平台适配的热门标签
-- **多语言支持**：中文/英文/俄语
+- 自动提亮 + 锐化
+- 适合电商、产品、人像等场景
 
-### 🚀 一键分发
+### ✍️ AI 文案辅助
 
-| 平台 | 尺寸规格 | 内容风格 |
-|------|---------|---------|
-| 小红书 | 1080×1440（竖版3:4） | 种草/治愈/干货 |
-| 抖音 | 1080×1920（竖版9:16） | 热门/短句/强吸引 |
-| 微信公众号 | 900×500（横版） | 正式/深度/完整 |
-| 独立站 | 1920×1080（横版16:9） | SEO友好/专业 |
-
-### 📊 数据监控
-
-- 发布状态实时追踪
-- 各平台数据统计
-- 历史发布记录
+- 生成平台风格标题
+- 生成热门标签
+- 模拟文案（无真实 AI 时使用）
 
 ---
 
@@ -70,7 +77,6 @@ ContentHub 是一款面向自媒体创作者、摄影师和营销团队的多平
 
 ### 安装
 
-**方式一：一键安装**
 ```powershell
 # 克隆项目
 git clone https://github.com/AlanGehrig/ContentHub.git
@@ -83,29 +89,12 @@ install_dependencies.bat
 startup.bat
 ```
 
-**方式二：手动安装**
-```bash
-git clone https://github.com/AlanGehrig/ContentHub.git
-cd ContentHub
-pip install -r requirements.txt
-python -c "import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8001)"
-```
-
-### 启动
-
-```powershell
-startup.bat
-```
-
-> 默认端口：**8001**（如8000被占用会自动切换）
-
 ### 访问
 
 | 界面 | 地址 |
 |------|------|
 | **前端界面** | http://localhost:8001 |
 | **API文档** | http://localhost:8001/docs |
-| **健康检查** | http://localhost:8001/api/v1/status |
 
 ---
 
@@ -116,30 +105,20 @@ ContentHub/
 ├── main.py                    # FastAPI 主入口
 ├── config.py                  # 全局配置
 ├── api/
-│   └── routes.py              # API 路由（20+接口）
+│   └── routes.py              # API 路由
 ├── services/
-│   ├── ai_adapter.py         # AI 文案适配
-│   ├── image_process.py      # OpenCV 图像处理
+│   ├── ai_adapter.py          # AI 文案适配
+│   ├── image_process.py       # OpenCV 图像处理
 │   ├── distribute.py          # 分发执行
 │   └── monitor.py             # 数据监控
 ├── task_queue_pkg/
-│   └── task_queue.py          # 任务队列（Redis+内存降级）
+│   └── task_queue.py          # 任务队列
 ├── frontend/
 │   └── index.html             # 前端界面
-├── requirements.txt           # 依赖清单
-├── startup.bat                # Windows 启动
-└── startup.sh                 # Linux/Mac 启动
+├── requirements.txt
+├── startup.bat
+└── startup.sh
 ```
-
-### 技术栈
-
-| 层级 | 技术 |
-|------|------|
-| 后端框架 | FastAPI + Uvicorn |
-| 图像处理 | OpenCV + Pillow |
-| 任务队列 | Redis（自动降级内存） |
-| 数据验证 | Pydantic |
-| 环境配置 | python-dotenv |
 
 ---
 
@@ -147,137 +126,64 @@ ContentHub/
 
 ### 核心接口
 
-#### 上传并分发
 ```bash
+# 上传并处理
 POST /api/v1/distribute/publish
 Content-Type: multipart/form-data
 
-参数：
-- image_file: 图片文件
-- title: 标题
-- content: 正文内容
-- platforms: 平台列表（xiaohongshu,douyin,wechat,website）
-```
-
-#### 系统状态
-```bash
+# 系统状态
 GET /api/v1/status
-```
 
-#### 平台列表
-```bash
+# 平台列表
 GET /api/v1/platforms
-```
 
-#### AI 生成标题
-```bash
+# AI 生成
 POST /api/v1/ai/generate
-{
-  "title": "原始标题",
-  "content": "正文内容",
-  "platform": "xiaohongshu"
-}
 ```
 
-#### 统计数据
-```bash
-GET /api/v1/stats
-```
-
-### 完整接口列表
+### 完整接口
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/distribute/publish` | 上传+分发 |
+| POST | `/distribute/publish` | 上传+处理+分发 |
 | GET | `/status` | 系统状态 |
 | GET | `/platforms` | 平台配置 |
 | POST | `/ai/generate` | AI 文案生成 |
 | POST | `/image/process` | 图像处理 |
 | GET | `/stats` | 数据统计 |
 | GET | `/tasks` | 任务列表 |
-| GET | `/publish/history` | 发布历史 |
-| POST | `/publish/simulate` | 模拟发布 |
 
----
-
-## 🕹️ 使用流程
-
-```
-1. 打开前端界面
-   → http://localhost:8001
-
-2. 上传图片素材
-   → 拖拽或点击上传
-
-3. 填写内容
-   → 标题 + 正文
-
-4. 选择目标平台
-   → 小红书 / 抖音 / 公众号 / 独立站
-
-5. 点击「一键分发」
-   → 系统自动：
-      • 裁剪适配各平台尺寸
-      • 生成平台专属文案
-      • 生成最优封面
-      • 加入发布队列
-
-6. 查看分发结果
-   → 实时状态 + 历史记录
-```
+完整文档：http://localhost:8001/docs
 
 ---
 
 ## 🔧 配置
 
-### config.py
-
-```python
-# 平台尺寸配置
-PLATFORM_SIZES = {
-    "xiaohongshu": (1080, 1440),
-    "douyin": (1080, 1920),
-    "wechat": (900, 500),
-    "website": (1920, 1080)
-}
-
-# Redis（可选）
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-```
-
-### 环境变量（.env）
+复制 `.env.example` 为 `.env`：
 
 ```env
-AI_API_KEY=your_api_key_here
+# AI API（可选）
+AI_API_KEY=
+
+# Redis（可选，不填则用内存队列）
 REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
 
 ---
 
-## ⚠️ 注意事项
-
-1. **Redis可选**：不安装Redis时自动降级为内存队列
-2. **模拟模式**：正式API未接入前，使用模拟发布
-3. **端口占用**：如8000被占用，自动使用8001
-
----
-
 ## 🔮 后续规划
 
-- [ ] 集成小红书/抖音真实发布API
-- [ ] 视频素材自动截帧
+- [ ] 浏览器自动化（Selenium/Playwright）实现真实平台发布
 - [ ] 定时发布功能
-- [ ] 内容审核模块
+- [ ] 素材管理界面
 - [ ] 数据可视化仪表盘
-- [ ] Chrome 插件支持
 
 ---
 
 ## 📄 许可证
 
-MIT License
+MIT License - 详见 [LICENSE](LICENSE)
 
 ---
 
@@ -286,7 +192,3 @@ MIT License
 **Alan Gehrig**  
 GitHub: [@AlanGehrig](https://github.com/AlanGehrig)  
 摄影作品集：[LightPlanner AI](https://github.com/AlanGehrig/lightplanner-ai)
-
----
-
-*如果对你有帮助，请给一个 ⭐*

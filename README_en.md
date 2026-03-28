@@ -1,4 +1,4 @@
-# ContentHub - Multi-Platform AI Content Distribution System
+# ContentHub - Local Image Processing Tool
 
 <div align="center">
 
@@ -7,7 +7,7 @@
 [![FastAPI](https://img.shields.io/badge/fastapi-0.104+-orange.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
-**Upload once. Auto-adapt to all platforms. One-click publish with AI-generated captions, covers, and tags.**
+**Local batch image processing - smart cropping, cover generation, AI caption assistance**
 
 </div>
 
@@ -15,16 +15,32 @@
 
 ## 🎯 What is ContentHub?
 
-ContentHub is an AI-powered multi-platform content distribution tool for content creators, photographers, and marketing teams.
+ContentHub is a **local image processing tool** that helps you:
 
-**The Problem:**
+| Feature | Description |
+|---------|-------------|
+| 📐 **Smart Cropping** | Upload once, auto-crop to all platform sizes |
+| 🎨 **Cover Generation** | Auto color correction + sharpening |
+| ✍️ **AI Caption Assist** | Generate platform-adapted titles and tags (mock mode) |
+| 📊 **Task Queue** | Redis or in-memory queue, batch processing supported |
 
-| Traditional | ContentHub |
-|-------------|-----------|
-| Edit manually for each platform | Upload once, AI auto-adapts |
-| Crop images by hand | Smart center-crop with AI |
-| Publish one by one | One-click to all platforms |
-| No performance tracking | Unified analytics |
+---
+
+## ⚠️ Important
+
+**This is a LOCAL image processing tool, NOT a publishing platform.**
+
+| Can Do | Cannot Do |
+|--------|----------|
+| ✅ Local image cropping | ❌ Post to Xiaohongshu/TikTok/WeChat |
+| ✅ Cover generation | ❌ Real account authorization |
+| ✅ Caption generation (mock) | ❌ Official platform APIs |
+| ✅ Batch processing | ❌ Real publishing |
+
+**Why?**
+- Xiaohongshu, Douyin, and WeChat Official Accounts **do not have public content posting APIs**
+- Real publishing requires official OAuth authentication, almost impossible for individual developers
+- This tool focuses on **local processing** and automates repetitive work
 
 ---
 
@@ -32,32 +48,23 @@ ContentHub is an AI-powered multi-platform content distribution tool for content
 
 ### 📸 Smart Image Processing
 
-- **Auto Cropping**: AI identifies the subject, keeps it centered
-- **Cover Generation**: Auto color correction + sharpening
-- **Batch Processing**: One image → all platform sizes
-- **Formats**: JPEG, PNG, GIF, WebP
+| Platform | Dimensions | Ratio |
+|----------|------------|-------|
+| Xiaohongshu | 1080×1440 | 3:4 |
+| Douyin | 1080×1920 | 9:16 |
+| WeChat | 900×500 | Banner |
+| Website | 1920×1080 | 16:9 |
 
-### ✍️ AI Caption Generation
+### 🎨 Cover Generation
 
-- **Platform-Native Style**: Auto-adapted tone per platform
-- **Viral Titles**: AI-generated high CTR titles
-- **Smart Tags**: Platform-specific trending hashtags
-- **Multi-language**: Chinese / English / Russian
+- Auto brightness + sharpening
+- Suitable for e-commerce, product, portrait scenarios
 
-### 🚀 One-Click Publish
+### ✍️ AI Caption Assist
 
-| Platform | Dimensions | Style |
-|----------|-------------|-------|
-| Xiaohongshu | 1080×1440 (3:4) | Lifestyle/Tutorial |
-| Douyin | 1080×1920 (9:16) | Viral/Short-form |
-| WeChat | 900×500 (Banner) | Professional/Deep |
-| Website | 1920×1080 (16:9) | SEO-optimized |
-
-### 📊 Analytics
-
-- Real-time publish status
-- Cross-platform statistics
-- Publishing history
+- Platform-style title generation
+- Trending hashtag generation
+- Mock captions (when no real AI is configured)
 
 ---
 
@@ -70,15 +77,11 @@ ContentHub is an AI-powered multi-platform content distribution tool for content
 
 ### Installation
 
-```bash
+```powershell
 git clone https://github.com/AlanGehrig/ContentHub.git
 cd ContentHub
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start server
-python -c "import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8001)"
+install_dependencies.bat
+startup.bat
 ```
 
 ### Access
@@ -87,120 +90,47 @@ python -c "import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8001)"
 |-----------|-----|
 | **Frontend** | http://localhost:8001 |
 | **API Docs** | http://localhost:8001/docs |
-| **Health Check** | http://localhost:8001/api/v1/status |
-
----
-
-## 📐 Architecture
-
-```
-ContentHub/
-├── main.py                    # FastAPI entry point
-├── config.py                  # Global config
-├── api/
-│   └── routes.py              # 20+ API routes
-├── services/
-│   ├── ai_adapter.py          # AI caption adapter
-│   ├── image_process.py       # OpenCV image processing
-│   ├── distribute.py          # Distribution engine
-│   └── monitor.py             # Analytics
-├── task_queue_pkg/
-│   └── task_queue.py          # Task queue (Redis + memory fallback)
-├── frontend/
-│   └── index.html             # Web interface
-├── requirements.txt
-├── startup.bat                # Windows launcher
-└── startup.sh                 # Linux/Mac launcher
-```
 
 ---
 
 ## 📖 API Reference
 
-### Core Endpoints
-
-#### Upload & Publish
 ```bash
+# Upload & Process
 POST /api/v1/distribute/publish
-Content-Type: multipart/form-data
 
-Params:
-- image_file: Image file
-- title: Title
-- content: Body text
-- platforms: xiaohongshu,douyin,wechat,website
-```
-
-#### System Status
-```bash
+# System Status
 GET /api/v1/status
-```
 
-#### Platform List
-```bash
+# Platform List
 GET /api/v1/platforms
+
+# AI Generate
+POST /api/v1/ai/generate
 ```
 
-#### AI Generate
-```bash
-POST /api/v1/ai/generate
-{
-  "title": "Original title",
-  "content": "Body content",
-  "platform": "xiaohongshu"
-}
-```
+Full docs: http://localhost:8001/docs
 
 ---
 
 ## 🔧 Configuration
 
-### config.py
-
-```python
-PLATFORM_SIZES = {
-    "xiaohongshu": (1080, 1440),
-    "douyin": (1080, 1920),
-    "wechat": (900, 500),
-    "website": (1920, 1080)
-}
-
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-```
-
-### Environment (.env)
+Copy `.env.example` to `.env`:
 
 ```env
-AI_API_KEY=your_api_key_here
+# AI API (optional)
+AI_API_KEY=
+
+# Redis (optional)
 REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
 
 ---
 
-## ⚠️ Notes
-
-1. **Redis is optional**: Falls back to in-memory queue if unavailable
-2. **Simulated mode**: Uses mock publishing until real APIs are integrated
-3. **Port 8001**: Default port (8000 fallback if occupied)
-
----
-
-## 🔮 Roadmap
-
-- [ ] Real Xiaohongshu/Douyin API integration
-- [ ] Video frame extraction
-- [ ] Scheduled publishing
-- [ ] Content moderation
-- [ ] Analytics dashboard
-- [ ] Chrome extension
-
----
-
 ## 📄 License
 
-MIT License
+MIT License - see [LICENSE](LICENSE)
 
 ---
 
@@ -209,7 +139,3 @@ MIT License
 **Alan Gehrig**  
 GitHub: [@AlanGehrig](https://github.com/AlanGehrig)  
 Photography Portfolio: [LightPlanner AI](https://github.com/AlanGehrig/lightplanner-ai)
-
----
-
-*If this project helps you, please give it a ⭐*

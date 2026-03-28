@@ -112,7 +112,7 @@ async def health_check():
     """
     健康检查端点
     """
-    from queue.task_queue import task_queue
+    from task_queue_pkg.task_queue import task_queue
     from services.monitor import monitor_service
 
     return JSONResponse({
